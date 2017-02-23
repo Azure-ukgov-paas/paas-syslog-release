@@ -1,0 +1,11 @@
+#!/bin/bash
+set -ex
+
+mkdir -p /var/vcap/store/syslog_storer
+mkdir -p /var/vcap/data/syslog_storer/buffered
+chown -R syslog:adm /var/vcap/data/syslog_storer/buffered
+chown -R syslog:adm /var/vcap/store/syslog_storer
+
+mkdir -p /etc/rsyslog.d
+cp $(dirname $0)/../config/rsyslog.conf /etc/rsyslog.d/rsyslog.conf
+service rsyslog restart

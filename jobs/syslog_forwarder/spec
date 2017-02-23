@@ -1,0 +1,105 @@
+---
+name: syslog_forwarder
+
+templates:
+  pre-start.erb: bin/pre-start
+  rsyslog.conf.erb: config/rsyslog.conf
+  ca_cert.pem.erb: config/ca_cert.pem
+  blackbox_ctl.erb: bin/blackbox_ctl
+  blackbox_config.yml.erb: config/blackbox_config.yml
+
+packages:
+  - pid_utils
+  - blackbox
+
+consumes:
+  - name: syslog_storer
+    type: syslog_storer
+    optional: true
+
+properties:
+  syslog.forward_files:
+    description: If enabled, use BlackBox to forward logs.
+    default: false
+  syslog.address:
+    description: IP or DNS address of the syslog server.
+    example: logs4.papertrail.com
+  syslog.port:
+    description: Port of the syslog server.
+    default: 514
+  syslog.transport:
+    default: tcp
+    description: One of `udp`, `tcp`, `relp`.
+  syslog.fallback_servers:
+    description: "List of fallback servers to be used if the primary syslog server is down. Only tcp or relp protocols are supported. Each list entry should consist of \"address\", \"transport\" and \"port\" keys."
+    default: []
+    example:
+    - address: logs5.papertrail.com
+      port: 44312
+      transport: tcp
+
+  syslog.custom_rule:
+    description: Custom rule for syslog event forwarder.
+    default: ""
+
+  syslog.tls_enabled:
+    description: Set this to true to enable TLS.
+    default: false
+  syslog.permitted_peer:
+    description: Accepted fingerprint (SHA1) or name of remote peer. Required if TLS is enabled.
+    default: ""
+    example: "*.papertrail.com"
+  syslog.ca_cert:
+    description: Trust these Certificate Authorities. Required if TLS is enabled.
+    example: |
+      -----BEGIN CERTIFICATE-----
+      MIIClTCCAf4CCQDc6hJtvGB8RjANBgkqhkiG9w0BAQUFADCBjjELMAkGA1UEBhMC...
+      -----END CERTIFICATE-----
+  syslog.queue_file_name:
+    description: Spill to disk if queue is full.
+    default: agg_backlog
+  syslog.queue_max_disk_space:
+    description: Max size for disk queue.
+    default: 128m
+  syslog.queue_size:
+    description: Store no more than this number syslog messages in memory.
+    default: 100000
+  syslog.queue_discard_mark:
+    description: After this number of messages are queued, purge messages whose severity is greater than or equal to DiscardSeverity.
+    default: 97500
+  syslog.queue_discard_severity:
+    description: |
+      This discards queued messages of this severity or higher when the `queue_discard_mark` is reached.
+      Setting this to '0' will discard all queued messages when the `queue_discard_mark` is reached.
+    default: 0
+  syslog.queue_low_water_mark:
+    description: Number of messages. Assuming avg size of 512B, this is 1MiB.
+    default: 2000
+  syslog.queue_high_water_mark:
+    description: Num messages. Assuming avg size of 512B, this is 4MiB. (If this is reached, messages will spill to disk until the low watermark is reached).
+    default: 80000
+  syslog.queue_timeout_enqueue:
+    description: Discard messages if the queue + disk is full
+    default: 0
+  syslog.queue_save_on_shutdown:
+    description: Save in-memory data to disk if rsyslog shuts down. Must be "on" or "off"
+    default: on
+  syslog.resume_interval:
+    description: When action is suspended (dest not connected), retry after this number of seconds
+    default: 10
+  syslog.queue_checkpoint_interval:
+    description: write bookkeeping information on checkpoints (every n records)
+    default: 100
+
+  syslog.blackbox.destination.address:
+    description: "address for syslog drain (including port)"
+
+  syslog.blackbox.destination.transport:
+    description: "transport protocol for syslog drain (udp/tcp/tls)"
+    default: tls
+
+  syslog.blackbox.source_dir:
+    description: >
+      directory with subdirectories containing log files.
+      log lines will be tagged with subdirectory name.
+    default: /var/vcap/sys/log
